@@ -2,21 +2,58 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 5f;
+    public float forwardSpeed = 5f;      // Velocidad inicial hacia adelante
+    public float sideSpeed = 5f;         // Velocidad lateral
+
+    [Header("Dificultad")]
+    public float speedIncreaseRate = 0.2f;     // Cuánto aumenta la velocidad
+    public float speedIncreaseInterval = 3f;   // Cada cuántos segundos aumenta
+    private float nextSpeedUpTime = 0f;
+
     private Rigidbody rb;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        nextSpeedUpTime = Time.time + speedIncreaseInterval;
     }
 
     void FixedUpdate()
     {
-        float moveX = Input.GetAxis("Horizontal");
-        float moveZ = Input.GetAxis("Vertical");
+        // Movimiento automático hacia adelante
+        rb.MovePosition(rb.position + Vector3.forward * forwardSpeed * Time.fixedDeltaTime);
 
-        Vector3 movement = new Vector3(moveX, 0, moveZ) * speed;
+        // Movimiento lateral controlado
+        float moveX = Input.GetAxis("Horizontal") * sideSpeed * Time.fixedDeltaTime;
+        rb.MovePosition(rb.position + new Vector3(moveX, 0f, 0f));
 
-        rb.MovePosition(transform.position + movement * Time.fixedDeltaTime);
+        // Curva de dificultad (aumento progresivo)
+        IncreaseDifficulty();
+    }
+
+    void IncreaseDifficulty()
+    {
+        if (Time.time >= nextSpeedUpTime)
+        {
+            forwardSpeed += speedIncreaseRate;   // Aumenta velocidad
+            nextSpeedUpTime = Time.time + speedIncreaseInterval;
+        }
+    }
+
+    void OnDestroy()
+    {
+        float highscore = PlayerPrefs.GetFloat("HighScore", 0f);
+
+        // Si deseas usar "score" aquí, debe venir del ScoreManager
+        if (ScoreManager.instance != null)
+        {
+            float currentScore = ScoreManager.instance.score;
+
+            if (currentScore > highscore)
+            {
+                PlayerPrefs.SetFloat("HighScore", currentScore);
+                PlayerPrefs.Save();
+            }
+        }
     }
 }
