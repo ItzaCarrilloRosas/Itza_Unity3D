@@ -2,13 +2,17 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float forwardSpeed = 5f;      // Velocidad inicial hacia adelante
-    public float sideSpeed = 5f;         // Velocidad lateral
+    public float forwardSpeed = 5f;      
+    public float sideSpeed = 5f;         
 
     [Header("Dificultad")]
-    public float speedIncreaseRate = 0.2f;     // Cuánto aumenta la velocidad
-    public float speedIncreaseInterval = 3f;   // Cada cuántos segundos aumenta
+    public float speedIncreaseRate = 0.2f;     
+    public float speedIncreaseInterval = 3f;   
     private float nextSpeedUpTime = 0f;
+
+    [Header("Boost")]
+    private bool isBoosting = false;
+    private float boostEndTime = 0f;
 
     private Rigidbody rb;
 
@@ -23,28 +27,46 @@ public class PlayerMovement : MonoBehaviour
         // Movimiento automático hacia adelante
         rb.MovePosition(rb.position + Vector3.forward * forwardSpeed * Time.fixedDeltaTime);
 
-        // Movimiento lateral controlado
+        // Movimiento lateral
         float moveX = Input.GetAxis("Horizontal") * sideSpeed * Time.fixedDeltaTime;
         rb.MovePosition(rb.position + new Vector3(moveX, 0f, 0f));
 
-        // Curva de dificultad (aumento progresivo)
+        // Curva de dificultad
         IncreaseDifficulty();
+
+        // Terminar Boost si ya pasó el tiempo
+        if (isBoosting && Time.time > boostEndTime)
+        {
+            forwardSpeed /= 2f;
+            isBoosting = false;
+        }
     }
 
     void IncreaseDifficulty()
     {
         if (Time.time >= nextSpeedUpTime)
         {
-            forwardSpeed += speedIncreaseRate;   // Aumenta velocidad
+            forwardSpeed += speedIncreaseRate;
             nextSpeedUpTime = Time.time + speedIncreaseInterval;
         }
+    }
+
+    // 🔥 MÉTODO QUE HACÍA FALTA 🔥
+    public void SpeedBoost(float multiplier, float duration)
+    {
+        if (!isBoosting)
+        {
+            forwardSpeed *= multiplier;   // Aumenta la velocidad
+        }
+
+        isBoosting = true;
+        boostEndTime = Time.time + duration;
     }
 
     void OnDestroy()
     {
         float highscore = PlayerPrefs.GetFloat("HighScore", 0f);
 
-        // Si deseas usar "score" aquí, debe venir del ScoreManager
         if (ScoreManager.instance != null)
         {
             float currentScore = ScoreManager.instance.score;
